@@ -7,8 +7,8 @@ Wrapper for PyTorch models that includes saving and
 loading, training functions, evaluation functions,
 and training logs
 """
-class ModelTrainer():
-    def _init_(self, model, optimiser, loss, device='cpu', custom_log_function=None, custom_log_columns=[]):
+class ModelTrainer:
+    def __init__(self, model, optimiser, loss, device=torch.device('cpu'), custom_log_function=None, custom_log_columns=[]):
         self.model = model
         self.optimiser = optimiser
         self.loss = loss
