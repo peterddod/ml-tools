@@ -1,6 +1,7 @@
-import BinaryPathTree
 import torch
 from torch import nn
+from .BinaryPathTree import BinaryPathTree
+
 
 """
 A path analyser for neural networks. Init, then call analyse
