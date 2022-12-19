@@ -1,2 +1,3 @@
-import datasets as datasets
-import models as models
+from datasets import MNIST
+from models import ModelTrainer
+from analysis import PathAnalyser
