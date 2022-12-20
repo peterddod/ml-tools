@@ -47,7 +47,6 @@ class ModelTrainer:
             self.train_log.at[epoch,f'{type}_time'] = time
 
     def train_epoch(self, dataloader, epoch):
-        dataloader.train()
         self.model.train()
 
         running_loss = .0
@@ -56,7 +55,7 @@ class ModelTrainer:
         start_time = tm.time()
 
         for idx, sample in enumerate(dataloader):
-            inputs, labels = sample
+            inputs, labels = sample[:2]
             self.optimiser.zero_grad()
 
             outputs = self.model(inputs)
@@ -76,7 +75,6 @@ class ModelTrainer:
         self.log('train', epoch, train_loss, None, end_time-start_time)
 
     def evaluate_epoch(self, dataloader, epoch, dataset_type):
-        dataloader.eval()
         self.model.eval()
         
         correct = 0

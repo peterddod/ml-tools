@@ -7,8 +7,6 @@ from ..utils import label_vectoriser
 
 class MNIST(Dataset):
     def __init__(self, train=True):
-        self.add_non_one_hot = True
-
         (train_X, train_y), (test_X, test_y) = mnist.load_data()
 
         if train:
@@ -35,13 +33,4 @@ class MNIST(Dataset):
 
         X, y, y_oh = X.float(), y.float(), y_oh.float()
 
-        if self.add_non_one_hot:
-            return (X,y_oh,y)
-
-        return (X,y_oh)
-
-    def train(self):
-        self.add_non_one_hot = False
-
-    def eval(self):
-        self.add_non_one_hot = True
+        return (X,y_oh,y)
