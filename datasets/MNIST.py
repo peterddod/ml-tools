@@ -8,13 +8,11 @@ class MNIST(Dataset):
     def __init__(self, train=True, scaled=False, augment=False, label_smoothing=0.0):
         (train_X, train_y), (test_X, test_y) = mnist.load_data()
 
-        train_X = torch.reshape(torch.from_numpy(train_X), (-1, 1, 28, 28))
-        test_X = torch.reshape(torch.from_numpy(test_X), (-1, 1, 28, 28))
+        train_X = torch.reshape(torch.from_numpy(train_X), (-1, 1, 28, 28)).float()
+        test_X = torch.reshape(torch.from_numpy(test_X), (-1, 1, 28, 28)).float()
 
-        train_X = train_X.float()
-        test_X = test_X.float()
-
-        train_y = label_vectoriser(train_y, 10, label_smoothing)
+        train_y = torch.from_numpy(train_y).float()
+        test_y = torch.from_numpy(test_y).float()
 
         if train:
             self.data =  {
