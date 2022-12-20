@@ -1,1 +1,1 @@
-from .ModelTrainer import ModelTrainer
+from .NLLModelTrainer import NLLModelTrainer

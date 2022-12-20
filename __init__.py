@@ -1,3 +1,2 @@
-from .datasets import MNIST
-from .models import ModelTrainer
+from .models import NLLModelTrainer
 from .analysis import PathAnalyser

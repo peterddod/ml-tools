@@ -6,16 +6,15 @@ from torch.nn import functional as F
 """
 Wrapper for PyTorch models that includes saving and
 loading, training functions, evaluation functions,
-and training logs
+and training logs. Any optimiser can be used, but
+loss is limited to only NLL.
+TODO: Add custom log function capability
 """
-class ModelTrainer:
-    def __init__(self, model, optimiser, loss, device=torch.device('cpu'), out_classes=10, custom_log_function=None, custom_log_columns=[]):
+class NLLModelTrainer:
+    def __init__(self, model, optimiser, device=torch.device('cpu'), custom_log_function=None, custom_log_columns=[]):
         self.model = model
         self.optimiser = optimiser
-        self.loss_fn = loss
         self.device = device
-
-        self.out_classes = 10
 
         self.custom_log_function = custom_log_function
         self.train_log = pd.DataFrame(
@@ -49,68 +48,68 @@ class ModelTrainer:
     def train_epoch(self, dataloader, epoch):
         self.model.train()
 
-        running_loss = .0
-        _sum = 0
+        correct = 0
+        total = 0
+        train_loss = 0
 
         start_time = tm.time()
 
-        for idx, sample in enumerate(dataloader):
-            inputs, labels = sample[:2]
-            self.optimiser.zero_grad()
+        print()
 
-            outputs = self.model(inputs)
-            loss = self.loss_fn(outputs, labels)
+        for batch_idx, (data, target) in enumerate(dataloader):
+            self.optimiser.zero_grad()
+            output = self.model(data)
+            loss = F.nll_loss(output, target)
             loss.backward()
             self.optimiser.step()
 
-            running_loss += loss.item() * inputs.shape[0]
-            _sum += inputs.shape[0]
+            total += data.size(0)
+            correct += (output.argmax(dim=1) == target).float().sum()
+            train_loss += loss.item() * data.size(0)
 
-            if idx % 200 == 0:
-                print('idx: {}, loss: {}'.format(idx, loss.sum().item()))
+            if batch_idx % 100 == 0:
+                print(f'Epoch {epoch}, Batch: {batch_idx}, Loss: {loss.item()}')
 
         end_time = tm.time()
-        train_loss = running_loss/_sum
+        train_loss /= total
+        accuracy = correct/total
 
-        self.log('train', epoch, train_loss, None, end_time-start_time)
+        print(f'\nTrain Results - Loss: {train_loss}, Accuracy: {accuracy}')
 
-    def evaluate_epoch(self, dataloader, epoch, dataset_type):
+        self.log('train', epoch, train_loss, accuracy, end_time-start_time)
+
+    def evaluate_epoch(self, dataloader, epoch):
         self.model.eval()
-        
+
         correct = 0
         total = 0
-        running_loss = .0
+        test_loss = 0
 
         start_time = tm.time()
 
-        # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
-            for data in dataloader:
-                images, labels_oh, labels = data
-                outputs = self.model(images)
+            for batch_idx, (data, target) in enumerate(dataloader):
+                output = self.model(data)
+                loss = F.nll_loss(output, target)
 
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-
-                loss = self.loss_fn(images, labels_oh)
-                running_loss += loss.item() * labels.size()
+                total += data.size(0)
+                correct += (output.argmax(dim=1) == target).float().sum()
+                test_loss += loss.item() * data.size(0)
 
         end_time = tm.time()
-        test_loss = running_loss/total
-        accuracy = 100 * correct/total
+        test_loss /= total
+        accuracy = correct/total
 
-        print(f'{dataset_type} evaluation - loss:{test_loss}, accuracy:{accuracy}')
+        print(f'Eval Results - Loss: {test_loss}, Accuracy: {accuracy}')
 
-        self.log(dataset_type, epoch, test_loss, accuracy, end_time-start_time)
+        self.log('test', epoch, test_loss, accuracy, end_time-start_time)
 
     def fit(self, train_loader, test_loader=None, epochs=5):
         for epoch in range(1, epochs + 1):
             self.train_epoch(train_loader, epoch)
-            self.evaluate_epoch(train_loader, epoch, 'train')  
 
             if test_loader != None:
-                self.evaluate_epoch(test_loader, epoch, 'test')    
+                self.evaluate_epoch(test_loader, epoch)    
     
     def load_model(self, path):
         self.model = torch.load(path)
