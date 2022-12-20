@@ -12,7 +12,7 @@ class ModelTrainer:
     def __init__(self, model, optimiser, loss, device=torch.device('cpu'), out_classes=10, custom_log_function=None, custom_log_columns=[]):
         self.model = model
         self.optimiser = optimiser
-        self.loss = loss
+        self.loss_fn = loss
         self.device = device
 
         self.out_classes = 10
@@ -46,59 +46,65 @@ class ModelTrainer:
         if time!=None and self.train_log.at[epoch,f'{type}_time']==.0:
             self.train_log.at[epoch,f'{type}_time'] = time
 
-    def train_epoch(self, train_loader, epoch):
+    def train_epoch(self, dataloader, epoch):
+        dataloader.train()
         self.model.train()
-        start_time = tm.time()
+
         running_loss = .0
+        _sum = 0
 
-        for idx, (train_x, train_label) in enumerate(train_loader):
+        start_time = tm.time()
+
+        for idx, sample in enumerate(dataloader):
+            inputs, labels = sample
             self.optimiser.zero_grad()
-            train_label = F.one_hot(train_label.to(torch.int64), self.out_classes)
 
-            predict_y = self.model(train_x)
-            loss = self.loss(predict_y, train_label)
+            outputs = self.model(inputs)
+            loss = self.loss_fn(outputs, labels)
+            loss.backward()
+            self.optimiser.step()
+
+            running_loss += loss.item() * inputs.shape[0]
+            _sum += inputs.shape[0]
 
             if idx % 200 == 0:
                 print('idx: {}, loss: {}'.format(idx, loss.sum().item()))
 
-            running_loss += loss.sum().item()
-            loss.backward()
-            self.optimiser.step()
-
         end_time = tm.time()
-        train_loss = running_loss/len(train_loader)
+        train_loss = running_loss/_sum
 
         self.log('train', epoch, train_loss, None, end_time-start_time)
 
-        if self.custom_log_function != None:
-            self.custom_log_function(self.model, self.train_log, 'train', epoch)
-
-    def evaluate_epoch(self, loader, epoch, dataset_type):
+    def evaluate_epoch(self, dataloader, epoch, dataset_type):
+        dataloader.eval()
         self.model.eval()
         
         correct = 0
-        _sum = 0
+        total = 0
         running_loss = .0
+
         start_time = tm.time()
 
-        for idx, (test_x, test_label) in enumerate(loader):
-            predict_y = self.model(test_x).detach()
-            predict_ys = torch.argmax(predict_y, axis=1)
+        # since we're not training, we don't need to calculate the gradients for our outputs
+        with torch.no_grad():
+            for data in dataloader:
+                images, labels_oh, labels = data
+                outputs = self.model(images)
 
-            running_loss += self.loss(predict_y, F.one_hot(test_label.to(torch.int64),self.out_classes))
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
 
-            _ = predict_ys == test_label
-            correct += torch.sum(_, axis=-1)
-            _sum += _.shape[0]
+                loss = self.loss_fn(images, labels_oh)
+                running_loss += loss.item() * labels.size()
 
         end_time = tm.time()
-        accuracy = correct / _sum
-        test_loss = running_loss / len(loader)
+        test_loss = running_loss/total
+        accuracy = 100 * correct/total
+
+        print(f'{dataset_type} evaluation - loss:{test_loss}, accuracy:{accuracy}')
 
         self.log(dataset_type, epoch, test_loss, accuracy, end_time-start_time)
-
-        if self.custom_log_function != None:
-            self.custom_log_function(self.model, self.train_log, 'test', epoch)
 
     def fit(self, train_loader, test_loader=None, epochs=5):
         for epoch in range(1, epochs + 1):

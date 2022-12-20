@@ -6,8 +6,8 @@ from ..utils import label_vectoriser
 
 
 class MNIST(Dataset):
-    def __init__(self, train=True, one_hot_labels=True):
-        self.one_hot_labels = one_hot_labels
+    def __init__(self, train=True):
+        self.add_non_one_hot = True
 
         (train_X, train_y), (test_X, test_y) = mnist.load_data()
 
@@ -31,16 +31,17 @@ class MNIST(Dataset):
 
         X = self.data['X'][idx]
         y = self.data['y'][idx]
+        y_oh = F.one_hot(y.to(torch.int64), 10)
 
-        if self.one_hot_labels:
-            y = F.one_hot(y.to(torch.int64), 10)
+        X, y, y_oh = X.float(), y.float(), y_oh.float()
 
-        X, y = X.float() ,y.float()
+        if self.add_non_one_hot:
+            return (X,y_oh,y)
 
-        return (X,y)
+        return (X,y_oh)
 
     def train(self):
-        self.one_hot_labels = True
+        self.add_non_one_hot = False
 
     def eval(self):
-        self.one_hot_labels = False
+        self.add_non_one_hot = True
