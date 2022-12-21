@@ -30,7 +30,7 @@ class NLLModelTrainer:
     def forward(self, X):
         return self.model(X)
 
-    def log(self, type, epoch, loss, accuracy, time):
+    def log(self, dataset_type, epoch, loss, accuracy, time):
         # check if epoch is in log, add if not
         if epoch not in self.train_log.index:
             columns = list(self.train_log.columns.values)
@@ -38,12 +38,12 @@ class NLLModelTrainer:
             self.train_log.loc[epoch] = entry
 
         # update row
-        if loss!=None and self.train_log.at[epoch,f'{type}_loss']==.0:
-            self.train_log.at[epoch,f'{type}_loss'] = loss
-        if accuracy!=None and self.train_log.at[epoch,f'{type}_accuracy']==.0:
-            self.train_log.at[epoch,f'{type}_accuracy'] = accuracy
-        if time!=None and self.train_log.at[epoch,f'{type}_time']==.0:
-            self.train_log.at[epoch,f'{type}_time'] = time
+        if loss!=None and self.train_log.at[epoch,f'{dataset_type}_loss']==.0:
+            self.train_log.at[epoch,f'{dataset_type}_loss'] = loss
+        if accuracy!=None and self.train_log.at[epoch,f'{dataset_type}_accuracy']==.0:
+            self.train_log.at[epoch,f'{dataset_type}_accuracy'] = accuracy
+        if time!=None and self.train_log.at[epoch,f'{dataset_type}_time']==.0:
+            self.train_log.at[epoch,f'{dataset_type}_time'] = time
 
     def train_epoch(self, dataloader, epoch):
         self.model.train()
