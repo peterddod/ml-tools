@@ -72,7 +72,7 @@ class NLLModelTrainer:
 
         end_time = tm.time()
         train_loss /= total
-        accuracy = correct/total
+        accuracy = (correct/total).item()
 
         print(f'\nTrain Results - Loss: {train_loss}, Accuracy: {accuracy}')
 
@@ -98,7 +98,7 @@ class NLLModelTrainer:
 
         end_time = tm.time()
         test_loss /= total
-        accuracy = correct/total
+        accuracy = (correct/total).item()
 
         print(f'Eval Results - Loss: {test_loss}, Accuracy: {accuracy}')
 
