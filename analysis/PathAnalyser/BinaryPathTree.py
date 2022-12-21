@@ -30,3 +30,18 @@ class BinaryPathTree:
             self.inactive.add(path)
             
         self.count += 1
+
+    def get_number_of_leafs(self):
+        if self.active==None and self.inactive==None:
+            return 1
+        else:
+            def get_count(node):
+                if node == None:
+                    return 0
+            
+                return node.get_number_of_leafs()
+                
+            left_count = get_count(self.active)
+            right_count = get_count(self.inactive)
+            
+            return left_count + right_count

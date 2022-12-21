@@ -11,23 +11,7 @@ TODO: add list of layer sizes as structure
 class PathAnalyser:
     def __init__(self):
         self.structure = None
-        self.active = None
-        self.inactive = None
-
-    def get_number_of_leafs(self):
-        if self.active==None and self.inactive==None:
-            return 1
-        else:
-            def get_count(node):
-                if node == None:
-                    return 0
-            
-                return node.get_number_of_leafs()
-                
-            left_count = get_count(self.active)
-            right_count = get_count(self.inactive)
-            
-            return left_count + right_count
+        self.path_tree = BinaryPathTree()
 
     """
     analyse the pathways created in a neural network
@@ -41,16 +25,24 @@ class PathAnalyser:
         if n==None:
             n = len(data_loader)
     
-        paths = BinaryPathTree()
         leafs = []
 
         weight_idx = []
+        skip_idx = []
+        current_idx = 0
 
         for i, module in enumerate(model.modules()):
-            if isinstance(module, nn.Linear) or isinstance(module, nn.LazyLinear) or isinstance(module, nn.Conv2d) or isinstance(module, nn.LazyConv2d):
+            if isinstance(module, (nn.Flatten)):
+                continue
+            elif isinstance(module, (nn.Linear, nn.LazyLinear)):
+                current_idx = len(weight_idx)
                 weight_idx.append(i)
+            elif isinstance(module, (nn.ReLU, nn.LogSoftmax)):
+                weight_idx[current_idx] = i
+            else:
+                skip_idx.append(i)
         
-        i = 0
+        sample_count = 0
         
         with torch.no_grad():
             for data, target in data_loader:
@@ -59,6 +51,9 @@ class PathAnalyser:
                 outputs = []
 
                 for i, module in enumerate(model.modules()):
+                    if i in skip_idx:
+                        continue
+
                     data = module(data)
 
                     if i in weight_idx:
@@ -69,14 +64,14 @@ class PathAnalyser:
                 path = path.squeeze()
 
                 path[path!=0] = 1
-                paths.add(list(path))
+                self.path_tree.add(list(path))
                 
-                i += 1
+                sample_count += 1
                 
-                if i%f==0:
-                    leafs.append(self.get_number_of_leafs())
+                if sample_count%f==0:
+                    leafs.append(self.path_tree.get_number_of_leafs())
                 
-                if i==n:
+                if sample_count==n:
                     break
 
         return leafs
