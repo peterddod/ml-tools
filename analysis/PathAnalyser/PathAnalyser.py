@@ -16,7 +16,7 @@ class PathAnalyser:
     """
     analyse the pathways created in a neural network
     params
-        f: how many steps in samples between recording number of leaf nodes (unique paths)
+        f: how many steps in samples between recording number of leaf nodes (unique paths), when None only returnspaths from full dataset
         n: terminate after this many samples, when None defaults to number of samples in dataset
     """
     def analyse(self, model, data_loader, n=None, f=1000, device=torch.device('cpu')):
@@ -68,10 +68,14 @@ class PathAnalyser:
                 
                 sample_count += 1
                 
-                if sample_count%f==0:
-                    leafs.append(self.path_tree.get_number_of_leafs())
-                
+                if f!=None:
+                    if sample_count%f==0:
+                        leafs.append(self.path_tree.get_number_of_leafs())
+                    
                 if sample_count==n:
                     break
+
+        if f==None:
+            return self.path_tree.get_number_of_leafs()
 
         return leafs
