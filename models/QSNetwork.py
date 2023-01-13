@@ -12,13 +12,13 @@ class QSNetwork(nn.Module):
         current_idx = 0
 
         for i, module in enumerate(pretrained_model.modules()):
-            if isinstance(module, (nn.Flatten)):
+            if isinstance(module, (nn.Flatten, nn.LogSoftmax)):
                 continue
             elif isinstance(module, (nn.Linear, nn.LazyLinear)):
-                current_idx = len(weight_idx)
+                current_idx = i+1
                 weight_idx.append(i)
-            elif isinstance(module, (nn.ReLU, nn.LogSoftmax)):
-                weight_idx[current_idx] = i
+            elif current_idx == i-1 and not isinstance(module, (nn.ReLU)):
+                del weight_idx[current_idx]
             else:
                 skip_idx.append(i)
 
