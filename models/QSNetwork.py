@@ -15,9 +15,9 @@ class QSNetwork(nn.Module):
             if isinstance(module, (nn.Flatten, nn.LogSoftmax)):
                 continue
             elif isinstance(module, (nn.Linear, nn.LazyLinear)):
-                current_idx = i+1
+                current_idx = len(weight_idx)
                 weight_idx.append(i)
-            elif current_idx == i-1 and not isinstance(module, (nn.ReLU)):
+            elif weight_idx[-1] == i-1 and not isinstance(module, (nn.ReLU)):
                 del weight_idx[current_idx]
             else:
                 skip_idx.append(i)
