@@ -33,7 +33,7 @@ class QSNetwork(nn.Module):
 
             module_list.append(module)
 
-        self.model = nn.Sequential(module_list)
+        self.model = nn.Sequential(*module_list)
 
     def forward(self, X):
         return self.model(X)
