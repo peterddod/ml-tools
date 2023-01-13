@@ -32,12 +32,12 @@ class PathAnalyser:
         current_idx = 0
 
         for i, module in enumerate(model.modules()):
-            if isinstance(module, (nn.Flatten)):
+            if isinstance(module, (nn.Flatten, nn.LogSoftmax)):
                 continue
             elif isinstance(module, (nn.Linear, nn.LazyLinear)):
                 current_idx = len(weight_idx)
                 weight_idx.append(i)
-            elif isinstance(module, (nn.ReLU, nn.LogSoftmax)):
+            elif isinstance(module, (nn.ReLU)):
                 weight_idx[current_idx] = i
             else:
                 skip_idx.append(i)

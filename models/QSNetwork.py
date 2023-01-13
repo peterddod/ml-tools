@@ -4,7 +4,7 @@ from ..modules import PathedLayer
 
 
 class QSNetwork(nn.Module):
-    def __init__(self, pretrained_model):
+    def __init__(self, pretrained_model, verbosity=0):
         super(QSNetwork, self).__init__()
 
         weight_idx = []
